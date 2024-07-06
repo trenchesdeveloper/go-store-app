@@ -1,0 +1,17 @@
+CREATE TABLE users (
+                       id SERIAL PRIMARY KEY,
+                       first_name VARCHAR(50) NOT NULL,
+                       last_name VARCHAR(50) NOT NULL,
+                       email VARCHAR(100) NOT NULL UNIQUE,
+                       password VARCHAR(255) NOT NULL,
+                       phone VARCHAR(20),
+                       code VARCHAR(50),
+                       expiry TIMESTAMP,
+                       verified BOOLEAN NOT NULL DEFAULT FALSE,
+                       user_type VARCHAR(50) NOT NULL,
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_users_email ON users(email);
