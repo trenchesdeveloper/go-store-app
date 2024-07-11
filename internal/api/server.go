@@ -7,6 +7,7 @@ import (
 	db2 "github.com/trenchesdeveloper/go-store-app/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/api/rest"
 	"github.com/trenchesdeveloper/go-store-app/internal/api/rest/handlers"
+	"github.com/trenchesdeveloper/go-store-app/internal/helper"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -40,8 +41,10 @@ func StartServer(config config.AppConfig) {
 		return c.SendString("Hello, World!")
 	})
 
+	// setup auth
+	auth := helper.NewAuth(config.AppSecret)
 	// rest Handlers
-	restHandler := &rest.Handler{App: app, Store: store}
+	restHandler := &rest.Handler{App: app, Store: store, Auth: auth}
 
 	setupRoutes(restHandler)
 
@@ -80,7 +83,7 @@ func runDBMigration(migrationURL string, dbSource string) {
 	}
 
 	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal("failed to run migrate up")
+		log.Fatalf("failed to run migrate up %v", err)
 	}
 
 	log.Println("db migrated successfully")

@@ -26,7 +26,7 @@ type CreateUserParams struct {
 	Code      pgtype.Text      `json:"code"`
 	Expiry    pgtype.Timestamp `json:"expiry"`
 	Verified  bool             `json:"verified"`
-	UserType  string           `json:"user_type"`
+	UserType  UserType         `json:"user_type"`
 }
 
 type CreateUserRow struct {
@@ -38,7 +38,7 @@ type CreateUserRow struct {
 	Code      pgtype.Text      `json:"code"`
 	Expiry    pgtype.Timestamp `json:"expiry"`
 	Verified  bool             `json:"verified"`
-	UserType  string           `json:"user_type"`
+	UserType  UserType         `json:"user_type"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
@@ -90,6 +90,33 @@ WHERE id = $1
 
 func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.Password,
+		&i.Phone,
+		&i.Code,
+		&i.Expiry,
+		&i.Verified,
+		&i.UserType,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at
+FROM users
+WHERE email = $1
+LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -170,7 +197,7 @@ type UpdateUserParams struct {
 	Code      pgtype.Text      `json:"code"`
 	Expiry    pgtype.Timestamp `json:"expiry"`
 	Verified  bool             `json:"verified"`
-	UserType  string           `json:"user_type"`
+	UserType  UserType         `json:"user_type"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {

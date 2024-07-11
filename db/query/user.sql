@@ -23,3 +23,9 @@ RETURNING id, first_name, last_name, email, password, phone, code, expiry, verif
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1;
+
+-- name: GetUserByEmail :one
+SELECT id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at
+FROM users
+WHERE email = $1
+LIMIT 1;

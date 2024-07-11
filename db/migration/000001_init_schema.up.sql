@@ -1,3 +1,5 @@
+CREATE TYPE user_type AS ENUM ('buyer', 'seller', 'admin');
+
 CREATE TABLE users (
                        id SERIAL PRIMARY KEY,
                        first_name VARCHAR(50) NOT NULL,
@@ -8,7 +10,7 @@ CREATE TABLE users (
                        code VARCHAR(50),
                        expiry TIMESTAMP,
                        verified BOOLEAN NOT NULL DEFAULT FALSE,
-                       user_type VARCHAR(50) NOT NULL,
+                       user_type user_type NOT NULL DEFAULT 'buyer',
                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
