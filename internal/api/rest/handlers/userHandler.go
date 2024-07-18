@@ -3,24 +3,12 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
-	db "github.com/trenchesdeveloper/go-store-app/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/api/rest"
-	"github.com/trenchesdeveloper/go-store-app/service"
+	db2 "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
+	"github.com/trenchesdeveloper/go-store-app/internal/dto"
+	"github.com/trenchesdeveloper/go-store-app/internal/service"
 	"net/http"
 )
-
-type userLoginReq struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type CreateUserRequest struct {
-	Password  string `json:"password" binding:"required,min=6"`
-	FirstName string `json:"first_name" binding:"required"`
-	LastName  string `json:"last_name" binding:"required"`
-	Email     string `json:"email" binding:"required,email"`
-	Phone     string `json:"phone"`
-}
 
 type UserHandler struct {
 	svc service.UserService
@@ -37,13 +25,17 @@ func SetupUserRoutes(rh *rest.Handler) {
 		svc: svc,
 	}
 
-	// public endpoints
-	app.Post("/register", handler.Register)
-	app.Post("/login", handler.GetUser)
+	pubRoutes := app.Group("/users")
 
+	// public endpoints
+	pubRoutes.Post("/register", handler.Register)
+	pubRoutes.Post("/login", handler.Login)
+
+	pvtRoutes := pubRoutes.Group("/", rh.Auth.Authorize)
 	// Private endpoints
-	app.Get("/verify", handler.GetUser)
-	app.Post("/verify", handler.GetUser)
+	pvtRoutes.Get("/verify", handler.GetVerificationCode)
+	pvtRoutes.Post("/verify", handler.VerifyUser)
+	pvtRoutes.Get("/profile", handler.GetProfile)
 }
 
 func (uh *UserHandler) GetUser(c *fiber.Ctx) error {
@@ -52,8 +44,33 @@ func (uh *UserHandler) GetUser(c *fiber.Ctx) error {
 	})
 }
 
+func (uh *UserHandler) GetVerificationCode(c *fiber.Ctx) error {
+	currentUser, err := uh.svc.Auth.GetCurrentUser(c)
+
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
+	code, err := uh.svc.GetVerificationCode(c, currentUser)
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Something went wrong",
+			"error":   err.Error(),
+		})
+
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"message": "Verification code generated successfully",
+		"code":    code,
+	})
+}
+
 func (uh *UserHandler) Login(c *fiber.Ctx) error {
-	var req userLoginReq
+	var req dto.UserLoginReq
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
@@ -77,7 +94,7 @@ func (uh *UserHandler) Login(c *fiber.Ctx) error {
 }
 
 func (uh *UserHandler) Register(c *fiber.Ctx) error {
-	req := CreateUserRequest{}
+	req := dto.CreateUserRequest{}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
@@ -85,13 +102,13 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	arg := db.CreateUserParams{
+	arg := db2.CreateUserParams{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
 		Phone:     pgtype.Text{String: req.Phone, Valid: true},
 		Password:  req.Password,
-		UserType:  db.UserTypeBuyer,
+		UserType:  db2.UserTypeBuyer,
 	}
 
 	token, err := uh.svc.Register(c.Context(), arg)
@@ -105,5 +122,61 @@ func (uh *UserHandler) Register(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(fiber.Map{
 		"message": "User registered successfully",
 		"token":   token,
+	})
+}
+
+func (uh *UserHandler) GetProfile(c *fiber.Ctx) error {
+	user, err := uh.svc.Auth.GetCurrentUser(c)
+
+	fetchedUser, err := uh.svc.Store.GetUser(c.Context(), int32(user.ID))
+
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"message": "Profile fetched successfully",
+		"user": dto.UserResponse{
+			ID:        fetchedUser.ID,
+			FirstName: fetchedUser.FirstName,
+			LastName:  fetchedUser.LastName,
+			Email:     fetchedUser.Email,
+			Phone:     fetchedUser.Phone,
+			Verified:  fetchedUser.Verified,
+		},
+	})
+}
+
+func (uh *UserHandler) VerifyUser(c *fiber.Ctx) error {
+	currentUser, err := uh.svc.Auth.GetCurrentUser(c)
+
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
+	var req dto.VerificationCodeInput
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "Please provide all required fields",
+		})
+	}
+
+	err = uh.svc.VerifyUser(c, currentUser.ID, req.Code)
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"message": "User verified successfully",
 	})
 }

@@ -117,9 +117,11 @@ func (a *Auth) VerifyToken(token string) (TokenPayload, error) {
 			return TokenPayload{}, errors.New("please login again")
 		}
 
+		log.Println("claims", claims)
+
 		payload := TokenPayload{}
 
-		payload.ID = uint(int32(uint(claims["payload_id"].(float64))))
+		payload.ID = uint(claims["user_id"].(float64))
 		payload.Email = claims["email"].(string)
 		payload.Role = claims["role"].(string)
 
@@ -132,7 +134,7 @@ func (a *Auth) VerifyToken(token string) (TokenPayload, error) {
 
 func (a *Auth) Authorize(ctx *fiber.Ctx) error {
 	authHeader := ctx.GetReqHeaders()["Authorization"]
-	payload, err := a.VerifyToken(strings.ToLower(authHeader[0]))
+	payload, err := a.VerifyToken(authHeader[0])
 
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -149,4 +151,8 @@ func (a *Auth) GetCurrentUser(ctx *fiber.Ctx) (TokenPayload, error) {
 	user := ctx.Locals(authorizationPayloadKey)
 
 	return user.(TokenPayload), nil
+}
+
+func (a Auth) GenerateCode() (int, error) {
+	return RandomNumbers(6)
 }

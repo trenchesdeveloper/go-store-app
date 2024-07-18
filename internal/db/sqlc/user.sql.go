@@ -230,3 +230,68 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 	)
 	return i, err
 }
+
+const updateUserCodeAndExpiry = `-- name: UpdateUserCodeAndExpiry :one
+UPDATE users
+SET code = $2, expiry = $3, updated_at = NOW()
+WHERE id = $1
+    RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at
+`
+
+type UpdateUserCodeAndExpiryParams struct {
+	ID     int32            `json:"id"`
+	Code   pgtype.Text      `json:"code"`
+	Expiry pgtype.Timestamp `json:"expiry"`
+}
+
+func (q *Queries) UpdateUserCodeAndExpiry(ctx context.Context, arg UpdateUserCodeAndExpiryParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserCodeAndExpiry, arg.ID, arg.Code, arg.Expiry)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.Password,
+		&i.Phone,
+		&i.Code,
+		&i.Expiry,
+		&i.Verified,
+		&i.UserType,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateUserVerified = `-- name: UpdateUserVerified :one
+UPDATE users
+SET verified = $2, updated_at = NOW()
+WHERE id = $1
+    RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at
+`
+
+type UpdateUserVerifiedParams struct {
+	ID       int32 `json:"id"`
+	Verified bool  `json:"verified"`
+}
+
+func (q *Queries) UpdateUserVerified(ctx context.Context, arg UpdateUserVerifiedParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserVerified, arg.ID, arg.Verified)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.Password,
+		&i.Phone,
+		&i.Code,
+		&i.Expiry,
+		&i.Verified,
+		&i.UserType,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

@@ -29,3 +29,15 @@ SELECT id, first_name, last_name, email, password, phone, code, expiry, verified
 FROM users
 WHERE email = $1
 LIMIT 1;
+
+-- name: UpdateUserCodeAndExpiry :one
+UPDATE users
+SET code = $2, expiry = $3, updated_at = NOW()
+WHERE id = $1
+    RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at;
+
+-- name: UpdateUserVerified :one
+UPDATE users
+SET verified = $2, updated_at = NOW()
+WHERE id = $1
+    RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at;

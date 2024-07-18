@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/gofiber/fiber/v2"
-	db "github.com/trenchesdeveloper/go-store-app/db/sqlc"
+	"github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
 )
 

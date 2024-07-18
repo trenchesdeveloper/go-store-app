@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
-	db2 "github.com/trenchesdeveloper/go-store-app/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/api/rest"
 	"github.com/trenchesdeveloper/go-store-app/internal/api/rest/handlers"
+	db2 "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
 	"log"
 
@@ -79,7 +79,8 @@ func connectToDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 func runDBMigration(migrationURL string, dbSource string) {
 	migration, err := migrate.New(migrationURL, dbSource)
 	if err != nil {
-		log.Fatal("cannot create new migrate instance")
+		log.Fatalf("cannot create new migrate instance: %v", err)
+		return
 	}
 
 	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
