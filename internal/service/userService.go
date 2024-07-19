@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
 	db2 "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
-	"github.com/trenchesdeveloper/go-store-app/internal/domain"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
 	"strconv"
 	"time"
@@ -166,7 +165,7 @@ func (us *UserService) VerifyUser(ctx *fiber.Ctx, userID uint, code int) error {
 	return nil
 }
 
-func (us *UserService) UpdateUser(user *domain.User) error {
+func (us *UserService) UpdateUser() error {
 	return nil
 }
 
@@ -174,18 +173,18 @@ func (us *UserService) DeleteUser(id uint) error {
 	return nil
 }
 
-func (us *UserService) GetUserByID(id uint) (*domain.User, error) {
-	return &domain.User{}, nil
+func (us *UserService) GetUserByID(id uint) error {
+	return nil
 }
 
-func (us *UserService) BecomeSeller(id uint) (*domain.User, error) {
-	return &domain.User{}, nil
+func (us *UserService) BecomeSeller(id uint) error {
+	return nil
 }
 
-func (us *UserService) CreateCart(id uint) (*domain.User, error) {
-	return &domain.User{}, nil
+func (us *UserService) CreateCart(id uint) error {
+	return nil
 }
 
-func (us *UserService) GetOrders(id uint) (*domain.User, error) {
-	return &domain.User{}, nil
+func (us *UserService) GetOrders(id uint) error {
+	return nil
 }
