@@ -134,6 +134,13 @@ func (a *Auth) VerifyToken(token string) (TokenPayload, error) {
 
 func (a *Auth) Authorize(ctx *fiber.Ctx) error {
 	authHeader := ctx.GetReqHeaders()["Authorization"]
+
+	if len(authHeader) == 0 {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthorized",
+		})
+	}
+
 	payload, err := a.VerifyToken(authHeader[0])
 
 	if err != nil {

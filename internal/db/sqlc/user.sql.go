@@ -264,6 +264,47 @@ func (q *Queries) UpdateUserCodeAndExpiry(ctx context.Context, arg UpdateUserCod
 	return i, err
 }
 
+const updateUserToSeller = `-- name: UpdateUserToSeller :one
+UPDATE users
+SET user_type =$2, first_name = $3, last_name = $4, phone = $5, updated_at = NOW()
+WHERE id = $1
+    RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at
+`
+
+type UpdateUserToSellerParams struct {
+	ID        int32       `json:"id"`
+	UserType  UserType    `json:"user_type"`
+	FirstName string      `json:"first_name"`
+	LastName  string      `json:"last_name"`
+	Phone     pgtype.Text `json:"phone"`
+}
+
+func (q *Queries) UpdateUserToSeller(ctx context.Context, arg UpdateUserToSellerParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserToSeller,
+		arg.ID,
+		arg.UserType,
+		arg.FirstName,
+		arg.LastName,
+		arg.Phone,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.Password,
+		&i.Phone,
+		&i.Code,
+		&i.Expiry,
+		&i.Verified,
+		&i.UserType,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateUserVerified = `-- name: UpdateUserVerified :one
 UPDATE users
 SET verified = $2, updated_at = NOW()

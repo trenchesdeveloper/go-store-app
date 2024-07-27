@@ -41,3 +41,9 @@ UPDATE users
 SET verified = $2, updated_at = NOW()
 WHERE id = $1
     RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at;
+
+-- name: UpdateUserToSeller :one
+UPDATE users
+SET user_type =$2, first_name = $3, last_name = $4, phone = $5, updated_at = NOW()
+WHERE id = $1
+    RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at;

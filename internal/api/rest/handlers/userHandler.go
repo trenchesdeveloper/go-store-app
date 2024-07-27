@@ -18,8 +18,9 @@ func SetupUserRoutes(rh *rest.Handler) {
 
 	app := rh.App
 	svc := service.UserService{
-		Store: rh.Store,
-		Auth:  rh.Auth,
+		Store:  rh.Store,
+		Auth:   rh.Auth,
+		Config: rh.Config,
 	}
 	handler := UserHandler{
 		svc: svc,
@@ -36,6 +37,8 @@ func SetupUserRoutes(rh *rest.Handler) {
 	pvtRoutes.Get("/verify", handler.GetVerificationCode)
 	pvtRoutes.Post("/verify", handler.VerifyUser)
 	pvtRoutes.Get("/profile", handler.GetProfile)
+
+	pvtRoutes.Post("/become-seller", handler.BecomeSeller)
 }
 
 func (uh *UserHandler) GetUser(c *fiber.Ctx) error {
@@ -53,7 +56,7 @@ func (uh *UserHandler) GetVerificationCode(c *fiber.Ctx) error {
 		})
 	}
 
-	code, err := uh.svc.GetVerificationCode(c, currentUser)
+	err = uh.svc.GetVerificationCode(c, currentUser)
 
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
@@ -65,7 +68,6 @@ func (uh *UserHandler) GetVerificationCode(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"message": "Verification code generated successfully",
-		"code":    code,
 	})
 }
 
@@ -178,5 +180,38 @@ func (uh *UserHandler) VerifyUser(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"message": "User verified successfully",
+	})
+}
+
+func (uh *UserHandler) BecomeSeller(c *fiber.Ctx) error {
+	currentUser, err := uh.svc.Auth.GetCurrentUser(c)
+
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized",
+		})
+	}
+
+	var req dto.SellerInput
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "Please provide all required fields",
+		})
+
+	}
+
+	token, err := uh.svc.BecomeSeller(c, currentUser.ID, req)
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"message": "Seller account created successfully",
+		"token":   token,
 	})
 }

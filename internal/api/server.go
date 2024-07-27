@@ -44,7 +44,12 @@ func StartServer(config config.AppConfig) {
 	// setup auth
 	auth := helper.NewAuth(config.AppSecret)
 	// rest Handlers
-	restHandler := &rest.Handler{App: app, Store: store, Auth: auth}
+	restHandler := &rest.Handler{
+		App:    app,
+		Store:  store,
+		Auth:   auth,
+		Config: config,
+	}
 
 	setupRoutes(restHandler)
 

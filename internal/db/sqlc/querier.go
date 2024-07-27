@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CreateBankAccount(ctx context.Context, arg CreateBankAccountParams) (BankAccount, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteUser(ctx context.Context, id int32) error
 	GetUser(ctx context.Context, id int32) (User, error)
@@ -16,6 +17,7 @@ type Querier interface {
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserCodeAndExpiry(ctx context.Context, arg UpdateUserCodeAndExpiryParams) (User, error)
+	UpdateUserToSeller(ctx context.Context, arg UpdateUserToSellerParams) (User, error)
 	UpdateUserVerified(ctx context.Context, arg UpdateUserVerifiedParams) (User, error)
 }
 

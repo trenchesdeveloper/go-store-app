@@ -7,11 +7,14 @@ createdb:
 dropdb:
 	docker exec -it  postgres14 dropdb postgres12
 
+migratecreate:
+	migrate create -ext sql -dir internal/db/migration -seq $(name)
+
 migrateup:
-	migrate -path db/migration -database "postgresql://postgres:password@localhost:5438/go-market?sslmode=disable" -verbose up
+	migrate -path internal/db/migration -database "postgresql://postgres:password@localhost:5438/go-market?sslmode=disable" -verbose up
 
 migratedown:
-	migrate -path db/migration -database "postgresql://postgres:password@localhost:5438/go-market?sslmode=disable" -verbose down
+	migrate -path internal/db/migration -database "postgresql://postgres:password@localhost:5438/go-market?sslmode=disable" -verbose down
 
 sqlc:
 	sqlc generate

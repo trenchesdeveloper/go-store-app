@@ -8,11 +8,14 @@ import (
 )
 
 type AppConfig struct {
-	ServerPort   string
-	DSN          string
-	MigrationURL string
-	DBSource     string
-	AppSecret    string
+	ServerPort        string
+	DSN               string
+	MigrationURL      string
+	DBSource          string
+	AppSecret         string
+	TwilioAccountSid  string
+	TwilioAuthToken   string
+	TwilioPhoneNumber string
 }
 
 func SetupEnv() (cfg AppConfig, err error) {
@@ -31,6 +34,10 @@ func SetupEnv() (cfg AppConfig, err error) {
 
 	appSecret := os.Getenv("APP_SECRET")
 
+	TwilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+	TwilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
+	TwilioPhoneNumber := os.Getenv("TWILIO_PHONE_NUMBER")
+
 	if len(dsn) < 1 {
 		return AppConfig{}, errors.New("DSN is not set")
 	}
@@ -39,10 +46,13 @@ func SetupEnv() (cfg AppConfig, err error) {
 		return AppConfig{}, errors.New("APP_SECRET is not set")
 	}
 	return AppConfig{
-		ServerPort:   httpPort,
-		DSN:          dsn,
-		MigrationURL: MigrationURL,
-		DBSource:     DBSource,
-		AppSecret:    appSecret,
+		ServerPort:        httpPort,
+		DSN:               dsn,
+		MigrationURL:      MigrationURL,
+		DBSource:          DBSource,
+		AppSecret:         appSecret,
+		TwilioAccountSid:  TwilioAccountSid,
+		TwilioAuthToken:   TwilioAuthToken,
+		TwilioPhoneNumber: TwilioPhoneNumber,
 	}, nil
 }

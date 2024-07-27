@@ -54,6 +54,16 @@ func (ns NullUserType) Value() (driver.Value, error) {
 	return string(ns.UserType), nil
 }
 
+type BankAccount struct {
+	ID          int32            `json:"id"`
+	UserID      int64            `json:"user_id"`
+	BankAccount int64            `json:"bank_account"`
+	SwiftCode   pgtype.Text      `json:"swift_code"`
+	PaymentType pgtype.Text      `json:"payment_type"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+}
+
 type User struct {
 	ID        int32            `json:"id"`
 	FirstName string           `json:"first_name"`

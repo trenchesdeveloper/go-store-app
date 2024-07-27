@@ -25,7 +25,7 @@ type CreateUserRequest struct {
 	FirstName string `json:"first_name" binding:"required"`
 	LastName  string `json:"last_name" binding:"required"`
 	Email     string `json:"email" binding:"required,email"`
-	Phone     string `json:"phone"`
+	Phone     string `json:"phone" binding:"required"`
 }
 
 type UserResponse struct {
@@ -39,4 +39,13 @@ type UserResponse struct {
 
 type VerificationCodeInput struct {
 	Code int `json:"code"`
+}
+
+type SellerInput struct {
+	FirstName         string `json:"first_name" validate:"required"`
+	LastName          string `json:"last_name" validate:"required"`
+	PhoneNumber       string `json:"phone_number" validate:"required"`
+	BankAccountNumber uint64 `json:"bank_account_number" validate:"required"`
+	SwiftCode         string `json:"swift_code" validate:"required"`
+	PaymentType       string `json:"payment_type" validate:"required"`
 }

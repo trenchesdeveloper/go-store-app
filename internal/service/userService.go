@@ -6,15 +6,19 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/trenchesdeveloper/go-store-app/config"
 	db2 "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
+	"github.com/trenchesdeveloper/go-store-app/internal/dto"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
+	"github.com/trenchesdeveloper/go-store-app/pkg/notification"
 	"strconv"
 	"time"
 )
 
 type UserService struct {
-	Store db2.Store
-	Auth  helper.Auth
+	Store  db2.Store
+	Auth   helper.Auth
+	Config config.AppConfig
 }
 
 func (us *UserService) findUserByEmail(ctx context.Context, email string) (db2.User, error) {
@@ -87,18 +91,18 @@ func (us *UserService) isVerifiedUser(ctx *fiber.Ctx, id uint) bool {
 	return currentUser.Verified
 }
 
-func (us *UserService) GetVerificationCode(ctx *fiber.Ctx, currentUser helper.TokenPayload) (int, error) {
+func (us *UserService) GetVerificationCode(ctx *fiber.Ctx, currentUser helper.TokenPayload) error {
 
 	// check if user is already verified
 	if us.isVerifiedUser(ctx, currentUser.ID) {
-		return 0, errors.New("user already verified ")
+		return errors.New("user already verified ")
 	}
 
 	// generate verification code
 	code, err := us.Auth.GenerateCode()
 
 	if err != nil {
-		return 0, errors.New("could not generate code")
+		return errors.New("could not generate code")
 	}
 
 	// update user with verification code
@@ -115,16 +119,23 @@ func (us *UserService) GetVerificationCode(ctx *fiber.Ctx, currentUser helper.To
 		},
 	}
 
-	_, err = us.Store.UpdateUserCodeAndExpiry(ctx.Context(), userParams)
+	updatedUser, err := us.Store.UpdateUserCodeAndExpiry(ctx.Context(), userParams)
 
 	if err != nil {
-		return 0, fmt.Errorf("could not update user: %v", err)
+		return fmt.Errorf("could not update user: %v", err)
 
 	}
 
 	// send sms/verification code to user
+	smsClient := notification.NewNotificationClient(us.Config)
 
-	return code, nil
+	err = smsClient.SendSMS(updatedUser.Phone.String, fmt.Sprintf("Your verification code is %d", code))
+
+	if err != nil {
+		return fmt.Errorf("could not send sms: %v", err)
+	}
+
+	return nil
 }
 
 func (us *UserService) VerifyUser(ctx *fiber.Ctx, userID uint, code int) error {
@@ -177,8 +188,63 @@ func (us *UserService) GetUserByID(id uint) error {
 	return nil
 }
 
-func (us *UserService) BecomeSeller(id uint) error {
-	return nil
+func (us *UserService) BecomeSeller(ctx *fiber.Ctx, userid uint, input dto.SellerInput) (string, error) {
+	// find existing user
+	user, err := us.Store.GetUser(ctx.Context(), int32(userid))
+
+	if err != nil {
+		return "", errors.New("user not found")
+
+	}
+	// check if user is already a seller
+	if user.UserType == db2.UserTypeSeller {
+		return "", errors.New("user is already a seller")
+	}
+
+	// update user to seller
+
+	seller, err := us.Store.UpdateUserToSeller(ctx.Context(), db2.UpdateUserToSellerParams{
+		ID:        int32(userid),
+		UserType:  db2.UserTypeSeller,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Phone: pgtype.Text{
+			String: input.PhoneNumber,
+			Valid:  true,
+		},
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("could not update user: %v", err)
+	}
+
+	// create bank account
+	_, err = us.Store.CreateBankAccount(ctx.Context(), db2.CreateBankAccountParams{
+		UserID:      int64(seller.ID),
+		BankAccount: int64(input.BankAccountNumber),
+		SwiftCode: pgtype.Text{
+			String: input.SwiftCode,
+			Valid:  true,
+		},
+		PaymentType: pgtype.Text{
+			String: input.PaymentType,
+			Valid:  true,
+		},
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("could not create bank account: %v", err)
+	}
+
+	//generate token
+	tokenPayload := helper.TokenPayload{
+		ID:    uint(seller.ID),
+		Email: seller.Email,
+		Role:  string(seller.UserType),
+	}
+
+	return us.Auth.GenerateToken(tokenPayload)
+
 }
 
 func (us *UserService) CreateCart(id uint) error {
