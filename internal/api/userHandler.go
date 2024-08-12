@@ -1,9 +1,8 @@
-package handlers
+package api
 
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/trenchesdeveloper/go-store-app/internal/api/rest"
 	db2 "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/dto"
 	"github.com/trenchesdeveloper/go-store-app/internal/service"
@@ -11,16 +10,16 @@ import (
 )
 
 type UserHandler struct {
-	svc service.UserService
+	svc    service.UserService
+	server *Server
 }
 
-func SetupUserRoutes(rh *rest.Handler) {
-
-	app := rh.App
+func (uh *UserHandler) SetupUserRoutes(server *Server) {
+	app := server.router
 	svc := service.UserService{
-		Store:  rh.Store,
-		Auth:   rh.Auth,
-		Config: rh.Config,
+		Store:  server.store,
+		Auth:   server.auth,
+		Config: *server.config,
 	}
 	handler := UserHandler{
 		svc: svc,
@@ -32,7 +31,7 @@ func SetupUserRoutes(rh *rest.Handler) {
 	pubRoutes.Post("/register", handler.Register)
 	pubRoutes.Post("/login", handler.Login)
 
-	pvtRoutes := pubRoutes.Group("/", rh.Auth.Authorize)
+	pvtRoutes := pubRoutes.Group("/", server.auth.Authorize)
 	// Private endpoints
 	pvtRoutes.Get("/verify", handler.GetVerificationCode)
 	pvtRoutes.Post("/verify", handler.VerifyUser)

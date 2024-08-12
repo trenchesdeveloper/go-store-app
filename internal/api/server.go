@@ -2,11 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/trenchesdeveloper/go-store-app/internal/api/rest"
-	"github.com/trenchesdeveloper/go-store-app/internal/api/rest/handlers"
-	db2 "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
+	"github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
 	"log"
 
@@ -14,61 +13,49 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/trenchesdeveloper/go-store-app/config"
-
-	_ "github.com/lib/pq"
 )
 
-func StartServer(config config.AppConfig) {
+type Server struct {
+	config *config.AppConfig
+	router *fiber.App
+	store  db.Store
+	auth   helper.Auth
+}
+
+func NewServer(config *config.AppConfig) *Server {
 	app := fiber.New()
 	ctx := context.Background()
-
-	log.Println("config dsn: ", config.DSN)
-
 	// connect to the database
 	dbConn, err := connectToDB(ctx, config.DSN)
 
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v", err)
 	}
-
-	store := db2.NewStore(dbConn)
-
-	log.Println("Connected to the database")
+	store := db.NewStore(dbConn)
 
 	runDBMigration(config.MigrationURL, config.DBSource)
 
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
-
 	// setup auth
 	auth := helper.NewAuth(config.AppSecret)
-	// rest Handlers
-	restHandler := &rest.Handler{
-		App:    app,
-		Store:  store,
-		Auth:   auth,
-		Config: config,
+
+	return &Server{
+		config: config,
+		router: app,
+		store:  store,
+		auth:   auth,
 	}
-
-	setupRoutes(restHandler)
-
-	log.Println("Server is running on port", config.ServerPort)
-
-	app.Listen(config.ServerPort)
 }
 
-func setupRoutes(rh *rest.Handler) {
-	// user.sql routes
-	handlers.SetupUserRoutes(rh)
-
-	// transaction routes
-	// transactionHandler := handlers.TransactionHandler{}
-	// transactionHandler.SetupTransactionRoutes(rh)
-
-	// catalog routes
-	// catalogHandler := handlers.CatalogHandler{}
-	// catalogHandler.SetupCatalogRoutes(rh)
+func (s *Server) Start(port int) {
+	s.router.Get("/ping", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "Welcome to Go store API",
+		})
+	})
+	user := UserHandler{}
+	user.SetupUserRoutes(s)
+	log.Println("Server is running on port: ", port)
+	s.router.Listen(fmt.Sprintf(":%d", port))
 }
 
 func connectToDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
