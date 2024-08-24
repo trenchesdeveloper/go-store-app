@@ -10,11 +10,21 @@ import (
 
 type Querier interface {
 	CreateBankAccount(ctx context.Context, arg CreateBankAccountParams) (BankAccount, error)
+	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
+	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	DeleteCategory(ctx context.Context, id int32) error
+	DeleteProduct(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) error
+	GetCategory(ctx context.Context, id int32) (Category, error)
+	GetProductByID(ctx context.Context, id int32) (Product, error)
 	GetUser(ctx context.Context, id int32) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	ListCategories(ctx context.Context, arg ListCategoriesParams) ([]Category, error)
+	ListProducts(ctx context.Context) ([]Product, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
+	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserCodeAndExpiry(ctx context.Context, arg UpdateUserCodeAndExpiryParams) (User, error)
 	UpdateUserToSeller(ctx context.Context, arg UpdateUserToSellerParams) (User, error)

@@ -64,6 +64,29 @@ type BankAccount struct {
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 }
 
+type Category struct {
+	ID           int32            `json:"id"`
+	Name         string           `json:"name"`
+	ParentID     pgtype.Int4      `json:"parent_id"`
+	ImageUrl     pgtype.Text      `json:"image_url"`
+	DisplayOrder pgtype.Int4      `json:"display_order"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+}
+
+type Product struct {
+	ID          int32            `json:"id"`
+	Name        string           `json:"name"`
+	Description pgtype.Text      `json:"description"`
+	CategoryID  int32            `json:"category_id"`
+	ImageUrl    pgtype.Text      `json:"image_url"`
+	Price       pgtype.Numeric   `json:"price"`
+	UserID      int32            `json:"user_id"`
+	Stock       int32            `json:"stock"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+}
+
 type User struct {
 	ID        int32            `json:"id"`
 	FirstName string           `json:"first_name"`
