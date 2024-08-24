@@ -14,7 +14,7 @@ type UserHandler struct {
 	server *Server
 }
 
-func (uh *UserHandler) SetupUserRoutes(server *Server) {
+func SetupUserRoutes(server *Server) {
 	app := server.router
 	svc := service.UserService{
 		Store:  server.store,

@@ -106,11 +106,42 @@ func (cs *CatalogService) ListProducts(ctx context.Context) ([]db.Product, error
 }
 
 func (cs *CatalogService) UpdateProduct(ctx context.Context, id int32, params db.UpdateProductParams) (db.Product, error) {
-	product, err := cs.Store.UpdateProduct(ctx, params)
+	updateParams := db.UpdateProductParams{
+		ID:          id,
+		Name:        params.Name,
+		Description: params.Description,
+		CategoryID:  params.CategoryID,
+		ImageUrl:    params.ImageUrl,
+		Price:       params.Price,
+		UserID:      params.UserID,
+		Stock:       params.Stock,
+	}
 
+	// Call the generated query method
+	product, err := cs.Store.UpdateProduct(ctx, updateParams)
 	if err != nil {
 		return db.Product{}, err
 	}
 
 	return product, nil
+}
+
+func (cs *CatalogService) GetProductsByCategory(ctx context.Context, categoryID int32) ([]db.Product, error) {
+	products, err := cs.Store.FindProductByCategory(ctx, categoryID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+func (cs *CatalogService) GetSellerProducts(ctx context.Context, sellerID int32) ([]db.Product, error) {
+	products, err := cs.Store.FindSellerProducts(ctx, sellerID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }

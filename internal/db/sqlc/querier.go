@@ -16,6 +16,8 @@ type Querier interface {
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) error
+	FindProductByCategory(ctx context.Context, categoryID int32) ([]Product, error)
+	FindSellerProducts(ctx context.Context, userID int32) ([]Product, error)
 	GetCategory(ctx context.Context, id int32) (Category, error)
 	GetProductByID(ctx context.Context, id int32) (Product, error)
 	GetUser(ctx context.Context, id int32) (User, error)

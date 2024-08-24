@@ -52,8 +52,12 @@ func (s *Server) Start(port int) {
 			"message": "Welcome to Go store API",
 		})
 	})
-	user := UserHandler{}
-	user.SetupUserRoutes(s)
+	// setup routes
+	SetupUserRoutes(s)
+
+	SetupCatalogRoutes(s)
+
+	// start the server
 	log.Println("Server is running on port: ", port)
 	s.router.Listen(fmt.Sprintf(":%d", port))
 }

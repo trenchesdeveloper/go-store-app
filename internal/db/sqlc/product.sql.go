@@ -63,6 +63,80 @@ func (q *Queries) DeleteProduct(ctx context.Context, id int32) error {
 	return err
 }
 
+const findProductByCategory = `-- name: FindProductByCategory :many
+SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
+FROM products
+WHERE category_id = $1
+`
+
+func (q *Queries) FindProductByCategory(ctx context.Context, categoryID int32) ([]Product, error) {
+	rows, err := q.db.Query(ctx, findProductByCategory, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Product{}
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CategoryID,
+			&i.ImageUrl,
+			&i.Price,
+			&i.UserID,
+			&i.Stock,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const findSellerProducts = `-- name: FindSellerProducts :many
+SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
+FROM products
+WHERE user_id = $1
+`
+
+func (q *Queries) FindSellerProducts(ctx context.Context, userID int32) ([]Product, error) {
+	rows, err := q.db.Query(ctx, findSellerProducts, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Product{}
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CategoryID,
+			&i.ImageUrl,
+			&i.Price,
+			&i.UserID,
+			&i.Stock,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProductByID = `-- name: GetProductByID :one
 SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 FROM products
@@ -126,7 +200,15 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 
 const updateProduct = `-- name: UpdateProduct :one
 UPDATE products
-SET name = $2, description = $3, category_id = $4, image_url = $5, price = $6, user_id = $7, stock = $8, updated_at = now()
+SET
+    name = COALESCE($2, name),
+    description = COALESCE($3, description),
+    category_id = COALESCE($4, category_id),
+    image_url = COALESCE($5, image_url),
+    price = COALESCE($6, price),
+    user_id = COALESCE($7, user_id),
+    stock = COALESCE($8, stock),
+    updated_at = now()
 WHERE id = $1
 RETURNING id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 `
