@@ -1,9 +1,14 @@
 package api
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/trenchesdeveloper/go-store-app/internal/service"
+	"log"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/pgtype"
+	db "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
+	"github.com/trenchesdeveloper/go-store-app/internal/dto"
+	"github.com/trenchesdeveloper/go-store-app/internal/service"
 )
 
 type CatalogHandler struct {
@@ -31,8 +36,8 @@ func SetupCatalogRoutes(server *Server) {
 	app.Get("/categories/:id", handler.GetCategoryById)
 
 	// private
-	// sellerRoutes := app.Group("/seller")
-	// sellerRoutes.Post("/categories")
+	sellerRoutes := app.Group("/seller", server.auth.AuthorizeSeller)
+	sellerRoutes.Post("/categories", handler.CreateCategory)
 	// sellerRoutes.Patch("/categories/:id")
 	// sellerRoutes.Delete("/categories/:id")
 
@@ -44,6 +49,35 @@ func SetupCatalogRoutes(server *Server) {
 	// sellerRoutes.Put("/products/:id")
 	// sellerRoutes.Get("/products/:id")
 
+}
+
+func (ch *CatalogHandler) CreateCategory(ctx *fiber.Ctx) error {
+	user, err := ch.svc.Auth.GetCurrentUser(ctx)
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, err)
+	}
+
+	log.Printf("Current User: %v", user)
+
+	var cat dto.CreateCategoryRequest
+	if err := ctx.BodyParser(&cat); err != nil {
+		return BadRequestError(ctx, "Invalid request payload")
+	}
+
+	category, err := ch.svc.CreateCategory(ctx.Context(), db.CreateCategoryParams{
+		Name:        cat.Name,
+		ParentID:   pgtype.Int4{
+			Int32: int32(cat.ParentId),
+		},
+
+	})
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
+	}
+
+	return SuccessResponse(ctx, "Create category", category)
 }
 
 func (ch *CatalogHandler) GetCategories(ctx *fiber.Ctx) error {
