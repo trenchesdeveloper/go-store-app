@@ -202,7 +202,6 @@ func (us *UserService) BecomeSeller(ctx *fiber.Ctx, userid uint, input dto.Selle
 	}
 
 	// update user to seller
-
 	seller, err := us.Store.UpdateUserToSeller(ctx.Context(), db2.UpdateUserToSellerParams{
 		ID:        int32(userid),
 		UserType:  db2.UserTypeSeller,

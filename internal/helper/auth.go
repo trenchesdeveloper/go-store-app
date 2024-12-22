@@ -2,12 +2,14 @@ package helper
 
 import (
 	"errors"
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
+	db "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -162,4 +164,35 @@ func (a *Auth) GetCurrentUser(ctx *fiber.Ctx) (TokenPayload, error) {
 
 func (a Auth) GenerateCode() (int, error) {
 	return RandomNumbers(6)
+}
+
+
+func (a Auth) AuthorizeSeller(ctx *fiber.Ctx) error {
+	authHeader := ctx.GetReqHeaders()["Authorization"]
+
+	if len(authHeader) == 0 {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": true,
+			"message": "unauthorized",
+		})
+	}
+
+	payload, err := a.VerifyToken(authHeader[0])
+
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthorized",
+		})
+	}
+
+	if payload.Role != string(db.UserTypeSeller) {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": true,
+			"message": "unauthorized",
+		})
+	}
+
+	ctx.Locals(authorizationPayloadKey, payload)
+
+	return ctx.Next()
 }

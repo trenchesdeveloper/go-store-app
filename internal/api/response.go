@@ -25,3 +25,10 @@ func SuccessResponse(ctx *fiber.Ctx, msg string, data interface{}) error {
 		"data":    data,
 	})
 }
+
+func NotFoundError(ctx *fiber.Ctx, msg string) error {
+	return ctx.Status(http.StatusNotFound).JSON(fiber.Map{
+		"error": true,
+		"message": msg,
+	})
+}

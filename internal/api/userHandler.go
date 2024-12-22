@@ -187,6 +187,7 @@ func (uh *UserHandler) BecomeSeller(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": true,
 			"message": "Unauthorized",
 		})
 	}
