@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"log"
+
 	"github.com/trenchesdeveloper/go-store-app/config"
 	db "github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
@@ -14,6 +16,7 @@ type CatalogService struct {
 }
 
 func (s CatalogService) CreateCategory(ctx context.Context, params db.CreateCategoryParams) (db.Category, error) {
+
 	category, err := s.Store.CreateCategory(ctx, params)
 
 	if err != nil {
@@ -45,7 +48,9 @@ func (s CatalogService) GetCategory(ctx context.Context, id int32) (db.Category,
 }
 
 func (s CatalogService) ListCategories(ctx context.Context) ([]db.Category, error) {
-	categories, err := s.Store.ListCategories(ctx, db.ListCategoriesParams{})
+	categories, err := s.Store.ListCategories(ctx)
+
+	log.Printf("Categories: %v", categories)
 
 	if err != nil {
 		return nil, err

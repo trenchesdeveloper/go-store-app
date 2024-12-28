@@ -14,8 +14,7 @@ WHERE id = $1;
 -- name: ListCategories :many
 SELECT id, name, parent_id, image_url, display_order, created_at, updated_at
 FROM categories
-ORDER BY id
-LIMIT $1 OFFSET $2;
+ORDER BY id;
 
 -- name: UpdateCategory :one
 UPDATE categories

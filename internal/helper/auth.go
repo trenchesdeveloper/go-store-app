@@ -118,9 +118,6 @@ func (a *Auth) VerifyToken(token string) (TokenPayload, error) {
 		if claims["exp"].(float64) < float64(time.Now().Unix()) {
 			return TokenPayload{}, errors.New("please login again")
 		}
-
-		log.Println("claims", claims)
-
 		payload := TokenPayload{}
 
 		payload.ID = uint(claims["user_id"].(float64))

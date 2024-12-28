@@ -67,8 +67,13 @@ func (ch *CatalogHandler) CreateCategory(ctx *fiber.Ctx) error {
 
 	category, err := ch.svc.CreateCategory(ctx.Context(), db.CreateCategoryParams{
 		Name:        cat.Name,
-		ParentID:   pgtype.Int4{
-			Int32: int32(cat.ParentId),
+		ImageUrl: pgtype.Text{
+			String: cat.ImageUrl,
+			Valid:  true,
+		},
+		DisplayOrder: pgtype.Int4{
+			Int32: int32(cat.DisplayOrder),
+			Valid: true,
 		},
 
 	})
@@ -97,7 +102,7 @@ func (ch *CatalogHandler) GetCategoryById(ctx *fiber.Ctx) error {
 	if err != nil {
 		// check if the error is not found
 		if err.Error() == "no rows in result set" {
-			return ErrorMessage(ctx, fiber.StatusNotFound, err)
+			return NotFoundError(ctx, "Category not found")
 		}
 		return ErrorMessage(ctx, fiber.StatusNotFound, err)
 	}
