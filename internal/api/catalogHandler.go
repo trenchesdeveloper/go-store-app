@@ -203,7 +203,7 @@ func (ch *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
 		Description: pgtype.Text{String: product.Description, Valid: product.Description != ""},
 		CategoryID:  int32(product.CategoryId),
 		ImageUrl:    pgtype.Text{String: product.ImageUrl, Valid: product.ImageUrl != ""},
-		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price)), Exp: 2, Valid: true},
+		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price * 100)), Exp: -2, Valid: true},
 		Stock:       int32(product.Stock),
 		UserID:      int32(currentUser.ID),
 	})
@@ -246,7 +246,7 @@ func (ch *CatalogHandler) UpdateProduct(ctx *fiber.Ctx) error {
 		Name:        fallbackIfNull(&product.Name, currentProduct.Name),
 		Description: pgtype.Text{String: fallbackIfNull(&product.Description, currentProduct.Description.String), Valid: true},
 		ImageUrl:    pgtype.Text{String: fallbackIfNull(&product.ImageUrl, currentProduct.ImageUrl.String), Valid: true},
-		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price * 100)), Exp: 2, Valid: true},
+		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price * 100)), Exp: -2, Valid: true},
 		CategoryID: prepareInt32(int(product.CategoryId), currentProduct.CategoryID),
 		Stock: 	prepareInt32(int(product.Stock), currentProduct.Stock),
 		UserID:    int32(user.ID),
