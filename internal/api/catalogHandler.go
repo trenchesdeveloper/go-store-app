@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"log"
 	"math/big"
 	"strconv"
@@ -112,9 +113,8 @@ func (ch *CatalogHandler) GetProducts(ctx *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit", "50"))
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 
-
 	products, err := ch.svc.ListProducts(ctx.Context(), db.ListProductsParams{
-		Limit: int32(limit),
+		Limit:  int32(limit),
 		Offset: int32((page - 1) * limit),
 	})
 	if err != nil {
@@ -191,7 +191,6 @@ func (ch *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
 
 	// get the user and check if the user is not a seller
 	currentUser, err := ch.svc.Store.GetUser(ctx.Context(), int32(user.ID))
-
 	if err != nil {
 		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
 	}
@@ -206,7 +205,7 @@ func (ch *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
 		ImageUrl:    pgtype.Text{String: product.ImageUrl, Valid: product.ImageUrl != ""},
 		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price)), Exp: 2, Valid: true},
 		Stock:       int32(product.Stock),
-		UserID:      int32(user.ID),
+		UserID:      int32(currentUser.ID),
 	})
 
 	if err != nil {
@@ -235,20 +234,24 @@ func (ch *CatalogHandler) UpdateProduct(ctx *fiber.Ctx) error {
 	}
 
 	// Check if the user is the owner of the product
-	if currentProduct.UserID != int32(user.ID) {
-		return ErrorMessage(ctx, fiber.StatusUnauthorized, nil)
+	if int32(currentProduct.UserID) != int32(user.ID) {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, errors.New("Unauthorized"))
 	}
 
+	log.Println("category check", currentProduct.CategoryID)
+	log.Println("category check", product.CategoryId)
 	// Prepare update parameters with fallback to existing values
 	updateParams := db.UpdateProductParams{
 		ID:          int32(id),
 		Name:        fallbackIfNull(&product.Name, currentProduct.Name),
 		Description: pgtype.Text{String: fallbackIfNull(&product.Description, currentProduct.Description.String), Valid: true},
-		CategoryID:  preparePgInt4(uintToIntPointer(product.CategoryId), currentProduct.CategoryID).Int32,
 		ImageUrl:    pgtype.Text{String: fallbackIfNull(&product.ImageUrl, currentProduct.ImageUrl.String), Valid: true},
 		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price * 100)), Exp: 2, Valid: true},
-		Stock:       preparePgInt4(uintToIntPointer(product.Stock), currentProduct.Stock).Int32,
+		CategoryID: prepareInt32(int(product.CategoryId), currentProduct.CategoryID),
+		Stock: 	prepareInt32(int(product.Stock), currentProduct.Stock),
+		UserID:    int32(user.ID),
 	}
+
 
 	updatedProduct, err := ch.svc.UpdateProduct(ctx.Context(), int32(id), updateParams)
 	if err != nil {
@@ -328,8 +331,8 @@ func (ch *CatalogHandler) GetProductsByCategory(ctx *fiber.Ctx) error {
 
 	products, err := ch.svc.GetProductsByCategory(ctx.Context(), db.FindProductByCategoryParams{
 		CategoryID: int32(id),
-		Limit: int32(limit),
-		Offset: int32((page - 1) * limit),
+		Limit:      int32(limit),
+		Offset:     int32((page - 1) * limit),
 	})
 	if err != nil {
 		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
@@ -400,4 +403,12 @@ func preparePgInt4(value *int, fallback int32) pgtype.Int4 {
 		return pgtype.Int4{Int32: fallback, Valid: true}
 	}
 	return pgtype.Int4{Int32: int32(*value), Valid: true}
+}
+
+// Helper to prepare int32 with fallback
+func prepareInt32(value int, fallback int32) int32 {
+	if value == 0 {
+		return fallback
+	}
+	return int32(value)
 }
