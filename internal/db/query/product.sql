@@ -11,7 +11,9 @@ WHERE id = $1;
 -- name: ListProducts :many
 SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 FROM products
-ORDER BY id ASC;
+ORDER BY id ASC
+LIMIT $1
+OFFSET $2;
 
 -- name: UpdateProduct :one
 UPDATE products

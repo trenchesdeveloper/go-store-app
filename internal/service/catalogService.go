@@ -15,7 +15,6 @@ type CatalogService struct {
 }
 
 func (s CatalogService) CreateCategory(ctx context.Context, params db.CreateCategoryParams) (db.Category, error) {
-
 	category, err := s.Store.CreateCategory(ctx, params)
 
 	if err != nil {
@@ -98,8 +97,8 @@ func (cs *CatalogService) GetProduct(ctx context.Context, id int32) (db.Product,
 	return product, nil
 }
 
-func (cs *CatalogService) ListProducts(ctx context.Context) ([]db.Product, error) {
-	products, err := cs.Store.ListProducts(ctx)
+func (cs *CatalogService) ListProducts(ctx context.Context, arg db.ListProductsParams) ([]db.Product, error) {
+	products, err := cs.Store.ListProducts(ctx, arg)
 
 	if err != nil {
 		return nil, err

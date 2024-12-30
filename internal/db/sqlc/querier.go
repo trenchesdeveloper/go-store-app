@@ -23,7 +23,7 @@ type Querier interface {
 	GetUser(ctx context.Context, id int32) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	ListCategories(ctx context.Context) ([]Category, error)
-	ListProducts(ctx context.Context) ([]Product, error)
+	ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
