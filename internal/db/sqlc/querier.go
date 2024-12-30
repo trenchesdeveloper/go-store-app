@@ -16,8 +16,8 @@ type Querier interface {
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) error
-	FindProductByCategory(ctx context.Context, categoryID int32) ([]Product, error)
-	FindSellerProducts(ctx context.Context, userID int32) ([]Product, error)
+	FindProductByCategory(ctx context.Context, arg FindProductByCategoryParams) ([]Product, error)
+	FindSellerProducts(ctx context.Context, arg FindSellerProductsParams) ([]Product, error)
 	GetCategory(ctx context.Context, id int32) (Category, error)
 	GetProductByID(ctx context.Context, id int32) (Product, error)
 	GetUser(ctx context.Context, id int32) (User, error)
@@ -27,6 +27,7 @@ type Querier interface {
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
+	UpdateProductStock(ctx context.Context, arg UpdateProductStockParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserCodeAndExpiry(ctx context.Context, arg UpdateUserCodeAndExpiryParams) (User, error)
 	UpdateUserToSeller(ctx context.Context, arg UpdateUserToSellerParams) (User, error)

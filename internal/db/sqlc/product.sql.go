@@ -67,10 +67,19 @@ const findProductByCategory = `-- name: FindProductByCategory :many
 SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 FROM products
 WHERE category_id = $1
+ORDER BY id ASC
+LIMIT $2
+OFFSET $3
 `
 
-func (q *Queries) FindProductByCategory(ctx context.Context, categoryID int32) ([]Product, error) {
-	rows, err := q.db.Query(ctx, findProductByCategory, categoryID)
+type FindProductByCategoryParams struct {
+	CategoryID int32 `json:"category_id"`
+	Limit      int32 `json:"limit"`
+	Offset     int32 `json:"offset"`
+}
+
+func (q *Queries) FindProductByCategory(ctx context.Context, arg FindProductByCategoryParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, findProductByCategory, arg.CategoryID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -104,10 +113,19 @@ const findSellerProducts = `-- name: FindSellerProducts :many
 SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 FROM products
 WHERE user_id = $1
+ORDER BY id ASC
+LIMIT $2
+OFFSET $3
 `
 
-func (q *Queries) FindSellerProducts(ctx context.Context, userID int32) ([]Product, error) {
-	rows, err := q.db.Query(ctx, findSellerProducts, userID)
+type FindSellerProductsParams struct {
+	UserID int32 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) FindSellerProducts(ctx context.Context, arg FindSellerProductsParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, findSellerProducts, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -256,4 +274,20 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updateProductStock = `-- name: UpdateProductStock :exec
+UPDATE products
+SET stock = stock + $2
+WHERE id = $1
+`
+
+type UpdateProductStockParams struct {
+	ID    int32 `json:"id"`
+	Stock int32 `json:"stock"`
+}
+
+func (q *Queries) UpdateProductStock(ctx context.Context, arg UpdateProductStockParams) error {
+	_, err := q.db.Exec(ctx, updateProductStock, arg.ID, arg.Stock)
+	return err
 }

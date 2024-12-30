@@ -128,8 +128,12 @@ func (cs *CatalogService) UpdateProduct(ctx context.Context, id int32, params db
 	return product, nil
 }
 
-func (cs *CatalogService) GetProductsByCategory(ctx context.Context, categoryID int32) ([]db.Product, error) {
-	products, err := cs.Store.FindProductByCategory(ctx, categoryID)
+func (cs *CatalogService) GetProductsByCategory(ctx context.Context, arg db.FindProductByCategoryParams) ([]db.Product, error) {
+	products, err := cs.Store.FindProductByCategory(ctx, db.FindProductByCategoryParams{
+		CategoryID: arg.CategoryID,
+		Limit:      arg.Limit,
+		Offset:     arg.Offset,
+	})
 
 	if err != nil {
 		return nil, err
@@ -138,12 +142,29 @@ func (cs *CatalogService) GetProductsByCategory(ctx context.Context, categoryID 
 	return products, nil
 }
 
-func (cs *CatalogService) GetSellerProducts(ctx context.Context, sellerID int32) ([]db.Product, error) {
-	products, err := cs.Store.FindSellerProducts(ctx, sellerID)
+func (cs *CatalogService) GetSellerProducts(ctx context.Context, arg db.FindSellerProductsParams) ([]db.Product, error) {
+	products, err := cs.Store.FindSellerProducts(ctx, db.FindSellerProductsParams{
+		UserID: arg.UserID,
+		Limit:  arg.Limit,
+		Offset: arg.Offset,
+	})
 
 	if err != nil {
 		return nil, err
 	}
 
 	return products, nil
+}
+
+func (cs *CatalogService) UpdateProductStock(ctx context.Context, id int32, stock int32) ( error) {
+	err := cs.Store.UpdateProductStock(ctx, db.UpdateProductStockParams{
+		ID:    id,
+		Stock: stock,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

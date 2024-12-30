@@ -44,10 +44,10 @@ func SetupCatalogRoutes(server *Server) {
 	//  products
 	sellerRoutes.Post("/products", handler.CreateProduct)
 	//sellerRoutes.Get("/products")
-	sellerRoutes.Patch("/products/:id", handler.UpdateProduct)
-	// sellerRoutes.Delete("/products/:id")
-	// sellerRoutes.Put("/products/:id")
-	// sellerRoutes.Get("/products/:id")
+	sellerRoutes.Patch("/products/:id", handler.UpdateProductStock)
+	sellerRoutes.Delete("/products/:id", handler.DeleteProduct)
+	sellerRoutes.Put("/products/:id", handler.UpdateProduct)
+	sellerRoutes.Get("/products", handler.GetSellerProducts)
 
 }
 
@@ -189,12 +189,22 @@ func (ch *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
 		return ErrorMessage(ctx, fiber.StatusUnauthorized, err)
 	}
 
+	// get the user and check if the user is not a seller
+	currentUser, err := ch.svc.Store.GetUser(ctx.Context(), int32(user.ID))
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
+	}
+	if currentUser.UserType != db.UserTypeSeller {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, nil)
+	}
+
 	createdProduct, err := ch.svc.CreateProduct(ctx.Context(), db.CreateProductParams{
 		Name:        product.Name,
 		Description: pgtype.Text{String: product.Description, Valid: product.Description != ""},
 		CategoryID:  int32(product.CategoryId),
 		ImageUrl:    pgtype.Text{String: product.ImageUrl, Valid: product.ImageUrl != ""},
-		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price * 100)), Exp: 2, Valid: true},
+		Price:       pgtype.Numeric{Int: big.NewInt(int64(product.Price)), Exp: 2, Valid: true},
 		Stock:       int32(product.Stock),
 		UserID:      int32(user.ID),
 	})
@@ -208,7 +218,11 @@ func (ch *CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
 
 func (ch *CatalogHandler) UpdateProduct(ctx *fiber.Ctx) error {
 	id, _ := strconv.Atoi(ctx.Params("id"))
+	user, err := ch.svc.Auth.GetCurrentUser(ctx)
 
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, err)
+	}
 	var product dto.UpdateProductRequest
 	if err := ctx.BodyParser(&product); err != nil {
 		return BadRequestError(ctx, "Invalid request payload")
@@ -220,7 +234,10 @@ func (ch *CatalogHandler) UpdateProduct(ctx *fiber.Ctx) error {
 		return NotFoundError(ctx, "Product not found")
 	}
 
-
+	// Check if the user is the owner of the product
+	if currentProduct.UserID != int32(user.ID) {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, nil)
+	}
 
 	// Prepare update parameters with fallback to existing values
 	updateParams := db.UpdateProductParams{
@@ -239,6 +256,120 @@ func (ch *CatalogHandler) UpdateProduct(ctx *fiber.Ctx) error {
 	}
 
 	return SuccessResponse(ctx, "Update product Successful", updatedProduct)
+}
+
+func (ch *CatalogHandler) GetProductById(ctx *fiber.Ctx) error {
+	id, _ := strconv.Atoi(ctx.Params("id"))
+
+	product, err := ch.svc.GetProduct(ctx.Context(), int32(id))
+	if err != nil {
+		return NotFoundError(ctx, "Product not found")
+	}
+	return SuccessResponse(ctx, "product", product)
+}
+
+func (ch *CatalogHandler) DeleteProduct(ctx *fiber.Ctx) error {
+	id, _ := strconv.Atoi(ctx.Params("id"))
+
+	// get the current user
+	user, err := ch.svc.Auth.GetCurrentUser(ctx)
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, err)
+	}
+
+	// Check if the product exists
+	currentProduct, err := ch.svc.GetProduct(ctx.Context(), int32(id))
+
+	if err != nil {
+		return NotFoundError(ctx, "Product not found")
+	}
+
+	// Check if the user is the owner of the product
+	if currentProduct.UserID != int32(user.ID) {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, nil)
+	}
+
+	err = ch.svc.DeleteProduct(ctx.Context(), int32(id))
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
+	}
+	return SuccessResponse(ctx, "Delete product Successful", nil)
+}
+
+func (ch *CatalogHandler) GetSellerProducts(ctx *fiber.Ctx) error {
+	user, err := ch.svc.Auth.GetCurrentUser(ctx)
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, err)
+	}
+
+	// get the limit and page
+	limit, _ := strconv.Atoi(ctx.Query("limit", "50"))
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+
+	products, err := ch.svc.GetSellerProducts(ctx.Context(), db.FindSellerProductsParams{
+		UserID: int32(user.ID),
+		Limit:  int32(limit),
+		Offset: int32((page - 1) * limit),
+	})
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
+	}
+	return SuccessResponse(ctx, "Get Seller Products Successfully", products)
+}
+
+func (ch *CatalogHandler) GetProductsByCategory(ctx *fiber.Ctx) error {
+	id, _ := strconv.Atoi(ctx.Params("id"))
+
+	// get the limit and page
+	limit, _ := strconv.Atoi(ctx.Query("limit", "50"))
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+
+	products, err := ch.svc.GetProductsByCategory(ctx.Context(), db.FindProductByCategoryParams{
+		CategoryID: int32(id),
+		Limit: int32(limit),
+		Offset: int32((page - 1) * limit),
+	})
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
+	}
+	return SuccessResponse(ctx, "Get Products by Category Successfully", products)
+}
+
+func (ch *CatalogHandler) UpdateProductStock(ctx *fiber.Ctx) error {
+	id, _ := strconv.Atoi(ctx.Params("id"))
+
+	// get logged in user
+	user, err := ch.svc.Auth.GetCurrentUser(ctx)
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, err)
+	}
+
+	var stock dto.UpdateStockRequest
+	if err := ctx.BodyParser(&stock); err != nil {
+		return BadRequestError(ctx, "Invalid request payload")
+	}
+
+	product, err := ch.svc.GetProduct(ctx.Context(), int32(id))
+	if err != nil {
+		return NotFoundError(ctx, "Product not found")
+	}
+
+	// check if the user is the owner of the product
+	if product.UserID != int32(user.ID) {
+		return ErrorMessage(ctx, fiber.StatusUnauthorized, nil)
+	}
+
+	err = ch.svc.UpdateProductStock(ctx.Context(), int32(id), int32(stock.Stock))
+
+	if err != nil {
+		return ErrorMessage(ctx, fiber.StatusInternalServerError, err)
+	}
+
+	return SuccessResponse(ctx, "Update product stock Successful", nil)
+
 }
 
 // Helper to convert *uint to *int

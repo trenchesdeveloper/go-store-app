@@ -36,9 +36,20 @@ WHERE id = $1;
 -- name: FindSellerProducts :many
 SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 FROM products
-WHERE user_id = $1;
+WHERE user_id = $1
+ORDER BY id ASC
+LIMIT $2
+OFFSET $3;
 
 -- name: FindProductByCategory :many
 SELECT id, name, description, category_id, image_url, price, user_id, stock, created_at, updated_at
 FROM products
-WHERE category_id = $1;
+WHERE category_id = $1
+ORDER BY id ASC
+LIMIT $2
+OFFSET $3;
+
+-- name: UpdateProductStock :exec
+UPDATE products
+SET stock = stock + $2
+WHERE id = $1;
