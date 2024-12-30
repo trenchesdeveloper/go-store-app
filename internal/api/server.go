@@ -3,13 +3,15 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/trenchesdeveloper/go-store-app/internal/db/sqlc"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/trenchesdeveloper/go-store-app/config"
@@ -34,6 +36,16 @@ func NewServer(config *config.AppConfig) *Server {
 	store := db.NewStore(dbConn)
 
 	runDBMigration(config.MigrationURL, config.DBSource)
+
+	// add cors middleware
+	c := cors.New(cors.Config{
+		AllowCredentials: true,
+		AllowOrigins: "http://localhost:3000,http://localhost:8080",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
+	})
+
+	app.Use(c)
 
 	// setup auth
 	auth := helper.NewAuth(config.AppSecret)
