@@ -38,6 +38,8 @@ func SetupUserRoutes(server *Server) {
 	pvtRoutes.Get("/profile", handler.GetProfile)
 
 	pvtRoutes.Post("/become-seller", handler.BecomeSeller)
+
+	pvtRoutes.Post("/add-to-cart", handler.AddToCart)
 }
 
 func (uh *UserHandler) GetUser(c *fiber.Ctx) error {
@@ -213,5 +215,41 @@ func (uh *UserHandler) BecomeSeller(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"message": "Seller account created successfully",
 		"token":   token,
+	})
+}
+
+
+func (uh *UserHandler) AddToCart(c *fiber.Ctx) error {
+	currentUser, err := uh.svc.Auth.GetCurrentUser(c)
+
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": true,
+			"message": "Unauthorized",
+		})
+	}
+
+	var req dto.CreateCartRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"message": "Please provide all required fields",
+		})
+
+	}
+
+	cartItems, err := uh.svc.CreateCart(c.Context(), currentUser.ID, req)
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"message": err.Error(),
+		})
+
+	}
+
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"message": "Item added to cart successfully",
+		"cart": cartItems,
 	})
 }

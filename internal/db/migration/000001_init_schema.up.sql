@@ -1,3 +1,9 @@
+-- Drop the index if it exists
+DROP INDEX IF EXISTS idx_users_email;
+
+-- Drop the custom type if it exists
+DROP TYPE IF EXISTS user_type CASCADE;
+
 CREATE TYPE user_type AS ENUM ('buyer', 'seller', 'admin');
 
 CREATE TABLE users (

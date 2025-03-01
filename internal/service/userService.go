@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/trenchesdeveloper/go-store-app/config"
@@ -11,8 +14,6 @@ import (
 	"github.com/trenchesdeveloper/go-store-app/internal/dto"
 	"github.com/trenchesdeveloper/go-store-app/internal/helper"
 	"github.com/trenchesdeveloper/go-store-app/pkg/notification"
-	"strconv"
-	"time"
 )
 
 type UserService struct {
@@ -246,8 +247,61 @@ func (us *UserService) BecomeSeller(ctx *fiber.Ctx, userid uint, input dto.Selle
 
 }
 
-func (us *UserService) CreateCart(id uint) error {
-	return nil
+func (us *UserService) CreateCart(ctx context.Context, userID uint, input dto.CreateCartRequest) ([]db2.Cart, error) {
+	// check if the cart exists
+	cart, _ := us.Store.FindCartItem(ctx, db2.FindCartItemParams{
+		UserID:    int32(userID),
+		ProductID: int32(input.ProductID),
+	})
+	if cart.ID > 0 {
+		if input.ProductID == 0 {
+			return nil, errors.New("please provide a valid product id")
+		}
+		if input.Quantity < 1 {
+			err := us.Store.DeleteCartById(ctx, cart.ID)
+			if err != nil {
+				return nil, fmt.Errorf("could not delete cart: %v", err)
+			}
+		} else {
+			// update cart item
+
+			_, err := us.Store.UpdateCart(ctx, db2.UpdateCartParams{
+				ID:       cart.ID,
+				Quantity: int32(input.Quantity),
+			})
+
+			if err != nil {
+				return nil, fmt.Errorf("could not update cart: %v", err)
+			}
+
+		}
+
+	} else {
+
+		// get the product
+		product, err := us.Store.GetProductByID(ctx, int32(input.ProductID))
+
+		if err != nil {
+			return nil, errors.New("product not found")
+		}
+
+		// create cart
+		_, err = us.Store.CreateCart(ctx, db2.CreateCartParams{
+			UserID:    int32(userID),
+			ProductID: int32(input.ProductID),
+			Quantity:  int32(input.Quantity),
+			Price:     product.Price,
+			Name:      product.Name,
+			ImageUrl:  product.ImageUrl.String,
+			SellerID:  product.UserID,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("could not create cart: %v", err)
+		}
+	}
+
+	return us.Store.FindCartItems(ctx, int32(userID))
 }
 
 func (us *UserService) GetOrders(id uint) error {
