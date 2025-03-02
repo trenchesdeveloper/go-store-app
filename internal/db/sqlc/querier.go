@@ -9,33 +9,39 @@ import (
 )
 
 type Querier interface {
+	CreateAddress(ctx context.Context, arg CreateAddressParams) (CreateAddressRow, error)
 	CreateBankAccount(ctx context.Context, arg CreateBankAccountParams) (BankAccount, error)
 	CreateCart(ctx context.Context, arg CreateCartParams) (Cart, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
+	DeleteAddress(ctx context.Context, id int32) error
 	DeleteCartById(ctx context.Context, id int32) error
 	DeleteCartItems(ctx context.Context, userID int32) error
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) error
+	FindAddressByUser(ctx context.Context, userID int32) ([]FindAddressByUserRow, error)
 	FindCartItem(ctx context.Context, arg FindCartItemParams) (Cart, error)
 	FindCartItems(ctx context.Context, userID int32) ([]Cart, error)
 	FindProductByCategory(ctx context.Context, arg FindProductByCategoryParams) ([]Product, error)
 	FindSellerProducts(ctx context.Context, arg FindSellerProductsParams) ([]Product, error)
+	GetAddress(ctx context.Context, id int32) (GetAddressRow, error)
 	GetCartById(ctx context.Context, id int32) (Cart, error)
 	GetCategory(ctx context.Context, id int32) (Category, error)
 	GetProductByID(ctx context.Context, id int32) (Product, error)
 	GetUser(ctx context.Context, id int32) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	ListAddresses(ctx context.Context, arg ListAddressesParams) ([]ListAddressesRow, error)
 	ListCategories(ctx context.Context) ([]Category, error)
 	ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	UpdateAddress(ctx context.Context, arg UpdateAddressParams) (UpdateAddressRow, error)
 	UpdateCart(ctx context.Context, arg UpdateCartParams) (Cart, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
 	UpdateProductStock(ctx context.Context, arg UpdateProductStockParams) error
-	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 	UpdateUserCodeAndExpiry(ctx context.Context, arg UpdateUserCodeAndExpiryParams) (User, error)
 	UpdateUserToSeller(ctx context.Context, arg UpdateUserToSellerParams) (User, error)
 	UpdateUserVerified(ctx context.Context, arg UpdateUserVerifiedParams) (User, error)

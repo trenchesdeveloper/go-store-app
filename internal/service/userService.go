@@ -177,16 +177,98 @@ func (us *UserService) VerifyUser(ctx *fiber.Ctx, userID uint, code int) error {
 	return nil
 }
 
-func (us *UserService) UpdateUser() error {
+func (us *UserService) UpdateUser(ctx context.Context, id uint, input dto.UpdateUserRequest) (db2.UpdateUserRow,error) {
+	user, err := us.Store.UpdateUser(ctx, db2.UpdateUserParams{
+		ID:        int32(id),
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Phone: pgtype.Text{
+			String: input.Phone,
+			Valid:  true,
+		},
+	})
+
+	if err != nil {
+		return db2.UpdateUserRow{}, fmt.Errorf("could not update user: %v", err)
+	}
+
+	return user, nil
+}
+
+func (us *UserService) CreateProfile(ctx context.Context, id uint, input dto.ProfileInput) error {
+	_, err := us.Store.CreateAddress(ctx, db2.CreateAddressParams{
+		UserID:       int32(id),
+		AddressLine1: input.AddressInput.AddressLine1,
+		AddressLine2: pgtype.Text{
+			String: input.AddressInput.AddressLine2,
+			Valid:  true,
+		},
+		City:         input.AddressInput.City,
+		State:        input.AddressInput.State,
+		Country:      input.AddressInput.Country,
+		PostCode:     int32(input.AddressInput.PostCode),
+	})
+
+	if err != nil {
+		return fmt.Errorf("could not create address: %v", err)
+	}
+
 	return nil
 }
+
+func (us *UserService) UpdateProfile(ctx context.Context, userID uint, input dto.ProfileInput) error {
+	_, err := us.Store.UpdateAddress(ctx, db2.UpdateAddressParams{
+		UserID:       int32(userID),
+		UserID_2:    int32(userID),
+		AddressLine1: input.AddressInput.AddressLine1,
+		AddressLine2: pgtype.Text{
+			String: input.AddressInput.AddressLine2,
+			Valid:  true,
+		},
+		City:         input.AddressInput.City,
+		State:        input.AddressInput.State,
+		Country:      input.AddressInput.Country,
+		PostCode:     int32(input.AddressInput.PostCode),
+	})
+
+	if err != nil {
+		return fmt.Errorf("could not update address: %v", err)
+	}
+
+	return nil
+}
+
 
 func (us *UserService) DeleteUser(id uint) error {
 	return nil
 }
 
-func (us *UserService) GetUserByID(id uint) error {
-	return nil
+func (us *UserService) GetUserByID(id uint) (dto.ProfileInput,error) {
+	// get the user and return the dto.ProfileInput
+	user, err := us.Store.GetUser(context.Background(), int32(id))
+
+	if err != nil {
+		return dto.ProfileInput{}, errors.New("user not found")
+	}
+
+	address, err := us.Store.FindAddressByUser(context.Background(), int32(id))
+
+	if err != nil {
+		return dto.ProfileInput{}, errors.New("address not found")
+	}
+
+	return dto.ProfileInput{
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		AddressInput: dto.AddressInput{
+			AddressLine1: address[0].AddressLine1,
+			AddressLine2: address[0].AddressLine2.String,
+			City:         address[0].City,
+			State:        address[0].State,
+			Country:      address[0].Country,
+			PostCode:     uint(address[0].PostCode),
+		},
+	}, nil
 }
 
 func (us *UserService) BecomeSeller(ctx *fiber.Ctx, userid uint, input dto.SellerInput) (string, error) {
@@ -301,6 +383,10 @@ func (us *UserService) CreateCart(ctx context.Context, userID uint, input dto.Cr
 		}
 	}
 
+	return us.Store.FindCartItems(ctx, int32(userID))
+}
+
+func (us *UserService) GetCart(ctx context.Context, userID uint) ([]db2.Cart, error) {
 	return us.Store.FindCartItems(ctx, int32(userID))
 }
 

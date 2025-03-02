@@ -182,44 +182,52 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
-SET first_name = $2, last_name = $3, email = $4, password = $5, phone = $6, code = $7, expiry = $8, verified = $9, user_type = $10, updated_at = NOW()
+SET
+first_name = COALESCE($2, first_name),
+last_name = COALESCE($3, last_name),
+email = COALESCE($4, email),
+phone = COALESCE($5, phone),
+updated_at = NOW()
 WHERE id = $1
-RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at
+RETURNING id, first_name, last_name, email, phone, code, expiry, verified, user_type, created_at, updated_at
 `
 
 type UpdateUserParams struct {
+	ID        int32       `json:"id"`
+	FirstName string      `json:"first_name"`
+	LastName  string      `json:"last_name"`
+	Email     string      `json:"email"`
+	Phone     pgtype.Text `json:"phone"`
+}
+
+type UpdateUserRow struct {
 	ID        int32            `json:"id"`
 	FirstName string           `json:"first_name"`
 	LastName  string           `json:"last_name"`
 	Email     string           `json:"email"`
-	Password  string           `json:"password"`
 	Phone     pgtype.Text      `json:"phone"`
 	Code      pgtype.Text      `json:"code"`
 	Expiry    pgtype.Timestamp `json:"expiry"`
 	Verified  bool             `json:"verified"`
 	UserType  UserType         `json:"user_type"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.ID,
 		arg.FirstName,
 		arg.LastName,
 		arg.Email,
-		arg.Password,
 		arg.Phone,
-		arg.Code,
-		arg.Expiry,
-		arg.Verified,
-		arg.UserType,
 	)
-	var i User
+	var i UpdateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
-		&i.Password,
 		&i.Phone,
 		&i.Code,
 		&i.Expiry,

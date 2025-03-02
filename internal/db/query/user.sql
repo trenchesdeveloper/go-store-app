@@ -16,9 +16,14 @@ LIMIT $1 OFFSET $2;
 
 -- name: UpdateUser :one
 UPDATE users
-SET first_name = $2, last_name = $3, email = $4, password = $5, phone = $6, code = $7, expiry = $8, verified = $9, user_type = $10, updated_at = NOW()
+SET
+first_name = COALESCE($2, first_name),
+last_name = COALESCE($3, last_name),
+email = COALESCE($4, email),
+phone = COALESCE($5, phone),
+updated_at = NOW()
 WHERE id = $1
-RETURNING id, first_name, last_name, email, password, phone, code, expiry, verified, user_type, created_at, updated_at;
+RETURNING id, first_name, last_name, email, phone, code, expiry, verified, user_type, created_at, updated_at;
 
 -- name: DeleteUser :exec
 DELETE FROM users

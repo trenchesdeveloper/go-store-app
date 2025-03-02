@@ -49,3 +49,24 @@ type SellerInput struct {
 	SwiftCode         string `json:"swift_code" validate:"required"`
 	PaymentType       string `json:"payment_type" validate:"required"`
 }
+
+type UpdateUserRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Phone     string `json:"phone"`
+}
+
+type AddressInput struct {
+	AddressLine1 string `json:"address_line1" validate:"required"`
+	AddressLine2 string `json:"address_line2"`
+	City		 string `json:"city" validate:"required"`
+	State		 string `json:"state" validate:"required"`
+	Country		 string `json:"country" validate:"required"`
+	PostCode	 uint `json:"post_code" validate:"required"`
+}
+
+type ProfileInput struct {
+	FirstName string `json:"first_name" validate:"required"`
+	LastName  string `json:"last_name" validate:"required"`
+	AddressInput AddressInput `json:"address" validate:"required"`
+}
